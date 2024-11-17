@@ -1,0 +1,72 @@
+name: effective-mobile-store
+
+services:
+  stock-db:
+    hostname: "${DB_STOCK_HOSTNAME}"
+    image: postgres:17.0-alpine3.20
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_STOCK_NAME}
+      - POSTGRES_USER=${DB_STOCK_USER}
+      - POSTGRES_PASSWORD=${DB_STOCK_PASSWORD}
+    expose:
+      - "5432"
+
+  history-db:
+    image: postgres:17.0-alpine3.20
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_HISTORY_NAME}
+      - POSTGRES_USER=${DB_HISTORY_USER}
+      - POSTGRES_PASSWORD=${DB_HISTORY_PASSWORD}
+    expose:
+      - "5432"
+
+  rabbitmq:
+    image: rabbitmq
+    expose:
+      - "5762"
+
+  stock-service:
+    depends_on:
+      - stock-db
+      - rabbitmq
+    environment:
+      - DB_HOSTNAME=${DB_STOCK_HOSTNAME}
+      - DB_NAME=${DB_STOCK_NAME}
+      - DB_USER=${DB_STOCK_USER}
+      - DB_PASSWORD=${DB_STOCK_PASSWORD}
+    build:
+      context: ./stock-service
+      dockerfile: Dockerfile
+    ports:
+      - "${STOCK_API_PORT}:3000"
+    volumes:
+      - ./stock-service:/app
+      
+  history-service:
+    depends_on:
+      - history-db
+      - rabbitmq
+    environment:
+      - DB_HOSTNAME=${DB_HISTORY_HOSTNAME}
+      - DB_NAME=${DB_HISTORY_NAME}
+      - DB_USER=${DB_HISTORY_USER}
+      - DB_PASSWORD=${DB_HISTORY_PASSWORD}
+    build:
+      context: ./history-service
+      dockerfile: Dockerfile
+    ports:
+      - "${HISTORY_API_PORT}:3000"
+    volumes:
+      - ./history-service:/app
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "81:80"
+      
