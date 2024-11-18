@@ -9,13 +9,13 @@ const app = express();
 app.use(bodyParser.json());
 
 connectDB();
-await sequelize.sync();
+await sequelize.sync({ force: true });
 
 // Эндпоинт для создания товара
 app.post('/products', async (req, res) => {
   try {
     const product = await Product.create(req.body);
-    MessageBroker.send("history", { action: "product-create", data: product })
+    MessageBroker.send("history", { type: "product", action: "product-create", ...product.dataValues })
     res.status(201).send(product);
   } catch (e) {
     res.status(400).send(e);
@@ -26,7 +26,7 @@ app.post('/products', async (req, res) => {
 app.post('/stock', async (req, res) => {
   try {
     const stock = await Stock.create(req.body);
-    MessageBroker.send("history", { action: "stock-create", data: stock })
+    MessageBroker.send("history", { type: "stock", action: "stock-create", ...stock.dataValues })
     res.status(201).send(stock);
   } catch (e) {
     res.status(400).send(e);
@@ -44,7 +44,7 @@ app.patch('/stock/increase/:plu/:shop_id', async (req, res) => {
     stock.quantity_in_order += req.body.inc_in_order;
     await stock.save();
     res.send(stock);
-    MessageBroker.send("history", { action: "stock-increase", data: stock })
+    MessageBroker.send("history", { type: "stock", action: "stock-increase", ...stock.dataValues })
   } catch (e) {
     res.status(400).send(e);
   }
@@ -60,7 +60,7 @@ app.patch('/stock/decrease/:plu/:shop_id', async (req, res) => {
     stock.quantity_on_shelf -= req.body.dec_on_shelf;
     stock.quantity_in_order -= req.body.dec_in_order;
     await stock.save();
-    MessageBroker.send("history", { action: "stock-decrease", data: stock })
+    MessageBroker.send("history", { type: "stock", action: "stock-decrease", ...stock.dataValues })
     res.send(stock);
   } catch (e) {
     res.status(400).send(e);
