@@ -4,6 +4,7 @@ import Product from './models/product.js';
 import Stock from './models/stock.js';
 import { connectDB, sequelize } from './database/database.js';
 import MessageBroker from './rabbitmq/rabbitmq.js'
+import { Op } from 'sequelize';
 
 const app = express();
 app.use(bodyParser.json());
@@ -70,20 +71,22 @@ app.patch('/stock/decrease/:plu/:shop_id', async (req, res) => {
 // Эндпоинт для получения остатков по фильтрам
 app.get('/stock', async (req, res) => {
   const { plu, shop_id, quantity_on_shelf_min, quantity_on_shelf_max, quantity_in_order_min, quantity_in_order_max } = req.query;
-  const filters = {};
-
-  if (plu) filters.plu = plu;
-  if (shop_id) filters.shop_id = shop_id;
-  if (quantity_on_shelf_min || quantity_on_shelf_max) {
-    filters.quantity_on_shelf = {};
-    if (quantity_on_shelf_min) filters.quantity_on_shelf.$gte = Number(quantity_on_shelf_min);
-    if (quantity_on_shelf_max) filters.quantity_on_shelf.$lte = Number(quantity_on_shelf_max);
-  }
-  if (quantity_in_order_min || quantity_in_order_max) {
-    filters.quantity_in_order = {};
-    if (quantity_in_order_min) filters.quantity_in_order.$gte = Number(quantity_in_order_min);
-    if (quantity_in_order_max) filters.quantity_in_order.$lte = Number(quantity_in_order_max);
-  }
+  const filters = {
+    ...(plu) && { plu: plu },
+    ...(shop_id) && { shop_id: shop_id },
+    ...(quantity_on_shelf_min || quantity_on_shelf_max) && {
+      quantity_on_shelf: {
+        ...(quantity_on_shelf_min) && { [Op.gte]: quantity_on_shelf_min },
+        ...(quantity_on_shelf_max) && { [Op.lte]: quantity_on_shelf_max }
+      }
+    },
+    ...(quantity_in_order_min || quantity_in_order_min) && {
+      quantity_in_order: {
+        ...(quantity_in_order_min) && { [Op.gte]: quantity_in_order_min },
+        ...(quantity_in_order_max) && { [Op.lte]: quantity_in_order_max }
+      }
+    }
+  };
 
   try {
     const stock = await Stock.findAll({ where: filters });
@@ -96,10 +99,10 @@ app.get('/stock', async (req, res) => {
 // Эндпоинт для получения товаров по фильтрам
 app.get('/products', async (req, res) => {
   const { name, plu } = req.query;
-  const filters = {};
-
-  if (name) filters.name = name;
-  if (plu) filters.plu = plu;
+  const filters = {
+    ...(name) && { name: name },
+    ...(plu) && { plu: plu }
+  };
 
   try {
     const products = await Product.findAll({ where: filters });
