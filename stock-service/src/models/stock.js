@@ -31,6 +31,8 @@ Stock.init(
   {
     sequelize,
     modelName: 'Stock',
+    createdAt: false,
+    updatedAt: 'date',
   }
 );
 

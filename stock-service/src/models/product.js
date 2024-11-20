@@ -18,6 +18,8 @@ Product.init(
   {
     sequelize,
     modelName: 'Product',
+    createdAt: false,
+    updatedAt: 'date',
   }
 );
 
