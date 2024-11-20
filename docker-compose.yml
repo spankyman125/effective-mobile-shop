@@ -2,9 +2,9 @@ name: effective-mobile-store
 
 services:
   stock-db:
+    restart: always
     hostname: "${DB_STOCK_HOSTNAME}"
     image: postgres:17.0-alpine3.20
-    restart: always
     environment:
       - POSTGRES_DB=${DB_STOCK_NAME}
       - POSTGRES_USER=${DB_STOCK_USER}
@@ -13,8 +13,8 @@ services:
       - "5432"
 
   history-db:
-    image: postgres:17.0-alpine3.20
     restart: always
+    image: postgres:17.0-alpine3.20
     environment:
       - POSTGRES_DB=${DB_HISTORY_NAME}
       - POSTGRES_USER=${DB_HISTORY_USER}
@@ -23,11 +23,13 @@ services:
       - "5432"
 
   rabbitmq:
+    restart: always
     image: rabbitmq
     expose:
       - "5762"
 
   stock-service:
+    restart: always
     depends_on:
       - stock-db
       - rabbitmq
@@ -41,10 +43,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${STOCK_API_PORT}:3000"
-    volumes:
-      - ./stock-service:/app
-      
+
   history-service:
+    restart: always
     depends_on:
       - history-db
       - rabbitmq
@@ -58,15 +59,3 @@ services:
       dockerfile: Dockerfile
     ports:
       - "${HISTORY_API_PORT}:3000"
-    volumes:
-      - ./history-service:/app
-
-  pgadmin:
-    image: dpage/pgadmin4
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: root
-    ports:
-      - "81:80"
-      

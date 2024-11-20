@@ -23,6 +23,6 @@
   },
   "scripts": {
     "build": "tsc -p .",
-    "start": "tsx watch ./src/index.ts"
+    "start": "tsx ./src/index.ts"
   }
 }
