@@ -1,4 +1,24 @@
 import amqplib from "amqplib";
+import StockHistory from "../models/stockHistory";
+import ProductHistory from "../models/productHistory";
+
+interface Message {
+  type: string;
+  id: number;
+  action: string;
+  plu: string;
+  date: Date;
+}
+
+interface MessageStock extends Message {
+  shop_id: number;
+  quantity_on_shelf: number;
+  quantity_in_order: number;
+}
+
+interface MessageProduct extends Message {
+  name: string;
+}
 
 class MessageBroker {
   isReady = this.init();
@@ -35,8 +55,24 @@ class MessageBroker {
         console.log("Waiting for messages in %s", queue);
         await this.channel.consume(
           queue,
-          function (msg) {
-            console.log(" [x] Received %s", msg?.content.toString());
+          function (msgRMQ) {
+            if (msgRMQ) {
+              const message = JSON.parse(msgRMQ.content.toString()) as Message;
+              switch (message.type) {
+                case "stock":
+                  console.log(message);
+                  void StockHistory.create(message as MessageStock);
+                  break;
+                case "product":
+                  console.log(message);
+                  void ProductHistory.create(message as MessageProduct);
+                  break;
+                default:
+                  console.error("Cannot parse received message");
+              }
+            } else {
+              console.warn("Empty message received");
+            }
           },
           {
             noAck: true,
